@@ -1,0 +1,26 @@
+---
+ - name: MicroK8s Cluster Setup Play
+   hosts: microk8s
+   gather_facts: false
+
+   tasks:
+   - name: Installing Snapd and Setup
+     shell: |
+             #######   sed -i 's/mirrorlist/#mirrorlist/g' /etc/yum.repos.d/CentOS-*   ##### Having issue with Yum CentOS 8.2.2004 ######
+             #######   sed -i 's|#baseurl=http://mirror.centos.org|baseurl=http://vault.centos.org|g' /etc/yum.repos.d/CentOS-* ##### Having issue with Yum CentOS 8.2.2004 ######
+             sed -i 's/SELINUX=enforcing/SELINUX=disabled/g' /etc/selinux/config
+             sed -i 's/SELINUX=permissive/SELINUX=disabled/g' /etc/selinux/config
+             systemctl disable firewalld
+             systemctl stop firewalld
+             yum install epel-release -y
+             yum install snapd -y
+             systemctl enable --now snapd.socket
+             ln -s /var/lib/snapd/snap /snap
+             echo 'export PATH=$PATH:/var/lib/snapd/snap/bin' | sudo tee -a /etc/profile.d/mysnap.sh
+
+
+   - name: Installing MicroK8s Cluster Setup Using Snap
+     shell: |
+             snap install microk8s --classic
+             usermod -aG microk8s $USER
+             chown -f -R $USER ~/.kube
